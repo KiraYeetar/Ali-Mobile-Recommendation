@@ -36,12 +36,12 @@ save 是否存储特征，默认不存；不存返回特征DataFrame，存返回
 '''
 def get_feature(data_all, data_p, label_day_rank, duration=7, p_only=True, data_item=None, save=False):
     # 第一部分: 用户的特征
-    # fea_user_path = get_user_feature(data_all=data_all, data_p=data_p, data_item=data_item, label_day_rank=label_day_rank, duration=duration, p_only=p_only, save=True)
-    fea_user_path = com.get_project_path(FEATURE_PATH) + get_save_name(label_day_rank, duration, p_only, index='user')
+    fea_user_path = get_user_feature(data_all=data_all, data_p=data_p, data_item=data_item, label_day_rank=label_day_rank, duration=duration, p_only=p_only, save=True)
+    # fea_user_path = com.get_project_path(FEATURE_PATH) + get_save_name(label_day_rank, duration, p_only, index='user')
 
     # 第二部分: 商品的特征
-    # fea_item_path = get_item_feature(data_all=data_all, data_p=data_p, data_item=data_item, label_day_rank=label_day_rank, duration=duration, p_only=p_only, save=True)
-    fea_item_path = com.get_project_path(FEATURE_PATH) + get_save_name(label_day_rank, duration, p_only, index='item')
+    fea_item_path = get_item_feature(data_all=data_all, data_p=data_p, data_item=data_item, label_day_rank=label_day_rank, duration=duration, p_only=p_only, save=True)
+    # fea_item_path = com.get_project_path(FEATURE_PATH) + get_save_name(label_day_rank, duration, p_only, index='item')
 
     # 第三部分: 用户X商品 的特征
     fea_ui_path = get_ui_feature(data_all=data_all, data_p=data_p, data_item=data_item, label_day_rank=label_day_rank, duration=duration, p_only=p_only, save=True)
@@ -122,15 +122,6 @@ def get_user_feature(data_all, data_p, label_day_rank, duration=7, p_only=True, 
     data_fea[fea_name] = data_fea[fea_name].fillna(0).astype(int)
     print('# -- ' + fea_name + ' complete -- #')
 
-    # 用户购买之间平均浏览多少次
-    # fea_name = 'mean_beh_type_1_count_between_buy&user_id'
-    # feature = data_all[(data_all['beh_type']==1) | (data_all['beh_type']==4)].sort_values(by=['user_id', 'day_rank', 'hour'], ascending=[1, 1, 1])
-    # feature['beh_type'] = feature['beh_type'].apply(lambda a: str(a))
-    # feature = com.pivot_table_plus(feature, 'user_id', 'beh_type', new_name=fea_name, aggfunc=mean_beh_type_1_count_between_buy)
-    # data_fea = pd.merge(data_fea, feature, on='user_id', how='left')
-    # data_fea[fea_name] = data_fea[fea_name].fillna(max(data_fea[fea_name])+1)
-    # print('# -- ' + fea_name + ' complete -- #')
-
     if save is True:
         save_name = get_save_name(label_day_rank, duration, p_only, index='user')
         com.save_csv(data_fea, com.get_project_path(FEATURE_PATH), save_name)
@@ -200,17 +191,6 @@ def get_item_feature(data_all, data_p, label_day_rank, duration=7, p_only=True, 
         feature = com.pivot_table_plus(feature, item_index, 'item_geo_lat', com.count_with_drop_duplicates_for_series, fea_name)
         data_fea = pd.merge(data_fea, feature, on=item_index, how='left')
         data_fea[fea_name] = data_fea[fea_name].fillna(0).astype(int)
-        print('# -- ' + fea_name + ' complete -- #')
-
-    # 商品/商品类型 购买之间平均浏览多少次
-    # for item_index in ['item_id', 'item_cate']:
-    #     fea_name = 'mean_beh_type_1_count_between_buy&'+item_index
-    #     feature = data_all[(data_all['beh_type']==1) | (data_all['beh_type']==4)].sort_values(by=[item_index, 'day_rank', 'hour'], ascending=[1, 1, 1])
-    #     feature = com.pivot_table_plus(feature, item_index, 'beh_type', new_name=fea_name, aggfunc=mean_beh_type_1_count_between_buy)
-    #     feature['beh_type'] = feature['beh_type'].apply(lambda a: str(a))
-    #     data_fea = pd.merge(data_fea, feature, on=item_index, how='left')
-    #     data_fea[fea_name] = data_fea[fea_name].fillna(max(data_fea[fea_name])+1)
-    #     print('# -- ' + fea_name + ' complete -- #')
 
     del data_fea['item_cate']
     if save is True:
@@ -246,14 +226,6 @@ def get_ui_feature(data_all, data_p, label_day_rank, duration=7, p_only=True, da
     # 用户是否 收藏/购买 过这个商品
     data_fea['beh_type_4_if&ui_id'] = (data_fea['ui_id'].isin(data_all[data_all['beh_type']==4]['ui_id'])).replace({True: 1, False: 0})
     data_fea['beh_type_2_if&ui_id'] = (data_fea['ui_id'].isin(data_all[data_all['beh_type']==2]['ui_id'])).replace({True: 1, False: 0})
-
-    # 用户最近多少天前收藏这个商品
-    # fea_name = 'beh_type_2_latest_to_now_day&ui_id'
-    # feature = data_all[data_all['beh_type']==2].loc[:, ['ui_id', 'day_rank']]
-    # feature['day_rank'] = feature['day_rank'].apply(lambda a: label_day_rank-a)
-    # feature = com.pivot_table_plus(feature, 'ui_id', 'day_rank', min, fea_name)
-    # data_fea = pd.merge(data_fea, feature, on='ui_id', how='left')
-    # data_fea[fea_name] = data_fea[fea_name].fillna(duration+1).apply(lambda a: int(a))
 
     # 用户与这个商品最后一次交互 是购买1 还是收藏1.5 还是浏览2 还是加购物车4
     fea_name = 'beh_type_?_last&ui_id'
@@ -297,31 +269,6 @@ def get_ui_feature(data_all, data_p, label_day_rank, duration=7, p_only=True, da
             data_fea = pd.merge(data_fea, feature.loc[:, [id_index, fea_name]], how='left', on=id_index)
             data_fea[fea_name] = data_fea[fea_name].fillna(24*duration).astype(int)
             print('# -- ' + fea_name + ' complete -- #')
-
-    # 用户购买该 商品/商品类型 之间平均浏览多少次
-    # for id_index in ['uc_id', 'ui_id']:
-    #     fea_name = 'mean_beh_type_1_count_between_buy&'+id_index
-    #     feature['beh_type'] = feature['beh_type'].apply(lambda a: str(a))
-    #     feature = com.pivot_table_plus(feature, id_index, 'beh_type', new_name=fea_name, aggfunc=mean_beh_type_1_count_between_buy)
-    #     data_fea = pd.merge(data_fea, feature, on=id_index, how='left')
-    #     data_fea[fea_name] = data_fea[fea_name].fillna(max(data_fea[fea_name])+1)
-    #     print('# -- ' + fea_name + ' complete -- #')
-
-    # (X 剧毒特征 X)  全集内/子集内 商品在用户 浏览/购买 计数数中的 正/反 排序
-    # for data_index in ['data_all', 'data_p']:
-    #     for beh_type in [1, 4]:
-    #         for ascending in [0, 1]:
-    #             if data_index == 'data_all': data = data_all
-    #             else: data = data_p
-    #             fea_name = 'count_rank'+str(ascending)+'?&ui_id&beh_type_'+str(beh_type)
-    #             feature = com.pivot_table_plus(data[data['beh_type']==beh_type], 'ui_id', 'item_id', 'count', 'tmp')
-    #             data_fea = pd.merge(data_fea, feature.loc[:, ['ui_id', 'tmp']], on='ui_id', how='left')
-    #             data_fea['tmp'] = data_fea['tmp'].fillna(0)
-    #             data_fea[fea_name] = data_fea.groupby('user_id')['tmp'].rank(ascending=ascending, method='dense').apply(lambda a: int(a))
-    #             del data_fea['tmp']
-
-    # 用户第一次浏览到购买 该商品/该商品类型 间隔平均多少 小时/天/次
-
 
     del data_fea['uc_id']
     del data_fea['ui_id']
